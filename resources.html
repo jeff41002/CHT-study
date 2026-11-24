@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>學習資源｜中華電信備考筆記</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: #f4f7fa;
+      color: #172e40;
+      font: 1rem/1.7 "Microsoft JhengHei", "PingFang TC", sans-serif;
+    }
+
+    .wrap { width: min(960px, 92%); margin-inline: auto; }
+    header { background: #12304a; color: white; }
+    header .wrap {
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 12px; padding-block: 16px;
+    }
+    header a { color: white; }
+    main { padding-block: 24px 48px; }
+    h1, h2, h3 { line-height: 1.35; }
+    h1 { margin: 0; }
+    h2 { margin: 32px 0 12px; }
+    h3 { margin: 0 0 10px; font-size: 1.15rem; }
+    p { margin: 8px 0; }
+    a, summary { color: #075985; }
+    [id] { scroll-margin-top: 16px; }
+    :focus-visible { outline: 3px solid #d88a0a; outline-offset: 3px; }
+
+    .links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .button {
+      display: inline-block; padding: 8px 15px; border-radius: 7px;
+      background: #075985; color: white; text-decoration: none;
+    }
+    .button:hover { background: #12304a; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .card {
+      min-width: 0; padding: 20px; background: white;
+      border: 1px solid #d5e1e9; border-radius: 12px;
+    }
+    .source { color: #526779; font-size: .94rem; }
+    details {
+      margin: 12px 0; padding: 10px 12px;
+      background: #eef5fa; border-radius: 6px;
+    }
+    summary { cursor: pointer; font-weight: 700; }
+    @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="wrap">
+      <strong>中華電信備考筆記</strong>
+      <a href="index.html">← 返回首頁</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h1>學習資源</h1>
+    <p>先選一個不熟的觀念。試著自己回答卡片上的問題，再展開解法，最後回原卷練習。</p>
+    <nav class="links" aria-label="選擇學習科目">
+      <a class="button" href="#electric">基本電學</a>
+      <a class="button" href="#computer">計算機概論</a>
+    </nav>
+
+    <section aria-labelledby="electric">
+      <h2 id="electric">基本電學</h2>
+      <div class="grid">
+
+        <article class="card" id="power">
+          <h3>電功率與效率：題目問的是輸出，還是損失？</h3>
+          <p>已知電壓與功率，可用 R = V² ÷ P 求等效輸入電阻。
+             遇到效率題，先把輸入功率分成「有用輸出」與「損失」兩部分。</p>
+          <p><strong>先算算看：</strong>馬達輸入 600 W，效率 70%，損失多少瓦？</p>
+          <details>
+            <summary>查看解法</summary>
+            <p>有用輸出是 600 × 0.7 = 420 W；題目問損失，所以是
+               600 − 420 = <strong>180 W</strong>。兩者加起來才是輸入功率。</p>
+          </details>
+          <p><a href="https://phet.colorado.edu/zh_TW/simulations/circuit-construction-kit-dc">
+            延伸實作：用 PhET 改變電阻，觀察電流
+          </a></p>
+          <p class="source">回原卷：107 年中油選擇題第 4、5 題。</p>
+        </article>
+
+        <article class="card" id="parallel">
+          <h3>串並聯：為什麼算出 3 A，卻選錯了？</h3>
+          <p>串聯時，各元件流過相同電流；並聯時，各支路兩端電壓相同。
+             算電流前，先圈出題目問「一條支路」還是「全部支路」。</p>
+          <p><strong>先判斷：</strong>四個 16 Ω 電阻並聯接上 12 V，3 A 是哪裡的電流？</p>
+          <details>
+            <summary>查看解法</summary>
+            <p>每條支路有 12 V，因此各流過 12 ÷ 16 = 0.75 A。
+               四條加總才是 <strong>3 A</strong>，所以它是總電流，不是分支電流。</p>
+          </details>
+          <p><a href="https://phet.colorado.edu/zh_TW/simulations/circuit-construction-kit-dc">
+            延伸實作：搭兩條並聯支路，比較分流前後的電流
+          </a></p>
+          <p class="source">回原卷：107 年中油選擇題第 15 題。</p>
+        </article>
+      </div>
+
+      <p class="links">
+        <a class="button" href="quiz.html?paper=cpc-107-instrument-electric">
+          開啟 107 年中油整卷
+        </a>
+      </p>
+    </section>
+
+    <section aria-labelledby="computer">
+      <h2 id="computer">計算機概論</h2>
+      <div class="grid">
+
+        <article class="card" id="memory">
+          <h3>分頁與快取：先分清楚在問空間，還是時間</h3>
+          <p>分頁題問空間：虛擬記憶體切成頁（page），實體記憶體切成頁框（frame）。
+             快取題問時間：只有沒命中時，才加上題目所說的「額外」存取時間。</p>
+          <p><strong>先算算看：</strong>查快取要 3 ns，命中率 85%，
+             未命中要多花 60 ns。平均一次需要多久？</p>
+          <details>
+            <summary>查看解法</summary>
+            <p>每次都花 3 ns，只有 15% 的情況多花 60 ns。
+               平均是 3 + 0.15 × 60 = <strong>12 ns</strong>。</p>
+          </details>
+          <p><a href="https://ocw.aca.ntu.edu.tw/courses/101S210">
+            臺大計算機概論：從 Operating Systems 單元開始
+          </a></p>
+          <p class="source">回原卷：115 年經濟部資訊卷第 2、12 題。</p>
+        </article>
+
+        <article class="card" id="network-basics">
+          <h3>網路基礎：設備、連線與位址怎麼分？</h3>
+          <p><strong>設備：</strong>路由器在不同 IP 網路之間轉送封包。</p>
+          <p><strong>連線：</strong>TCP 建立連線的三步是 SYN → SYN-ACK → ACK。</p>
+          <p><strong>位址：</strong>CIDR 斜線後的數字，是子網路遮罩從左邊開始連續的 1 的個數。</p>
+          <p><strong>先換算：</strong>255.255.255.240 要寫成斜線多少？</p>
+          <details>
+            <summary>查看解法</summary>
+            <p>前三個 255 各有 8 個 1，共 24 個。最後的 240 是 11110000，
+               再加 4 個，所以是 <strong>/28</strong>。</p>
+          </details>
+          <p><a href="https://ocw.nthu.edu.tw/courses/291">
+            清大計算機網路概論：複習 IP 或 TCP
+          </a></p>
+          <p class="source">回原卷：115 年經濟部資訊卷第 27、28、31 題。</p>
+        </article>
+      </div>
+
+      <p class="links">
+        <a class="button" href="quiz.html?paper=moea-115-info">
+          開啟 115 年經濟部資訊整卷
+        </a>
+      </p>
+    </section>
+  </main>
+</body>
+</html>

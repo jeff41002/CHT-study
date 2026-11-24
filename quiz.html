@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>隨機練習｜中華電信備考筆記</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f4f7fa;
+      color: #172e40;
+      font: 1rem/1.65 "Microsoft JhengHei", sans-serif;
+    }
+    header { background: #12304a; color: white; }
+    .wrap { width: min(850px, 92%); margin: auto; }
+    header .wrap, .tools {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
+    }
+    header .wrap { justify-content: space-between; padding: 16px 0; }
+    header a { color: white; }
+    main { padding: 24px 0 48px; }
+    h1 { margin: 0; }
+    .panel, fieldset {
+      min-width: 0; margin: 16px 0; padding: 20px;
+      background: white; border: 1px solid #ccdbe5; border-radius: 12px;
+    }
+    legend { font-weight: bold; color: #075985; }
+    .stem { font-weight: bold; white-space: pre-wrap; margin: 0 0 12px; }
+    .choice {
+      display: block; padding: 8px; margin: 5px 0;
+      border: 1px solid #d8e2e8; border-radius: 6px; cursor: pointer;
+    }
+    .choice:has(input:checked) { background: #e9f5ff; border-color: #075985; }
+    select, button { padding: 9px 14px; font: inherit; border-radius: 6px; }
+    button { border: 0; background: #075985; color: white; cursor: pointer; }
+    .feedback { margin-top: 12px; padding: 10px; border-left: 4px solid; }
+    .right { background: #eaf8ef; border-color: #30834d; }
+    .wrong { background: #fff2ef; border-color: #bb5138; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <strong>中華電信備考筆記</strong>
+      <a href="index.html">← 返回首頁</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h1>歷屆試題隨機練習</h1>
+
+    <section class="panel">
+      <div class="tools">
+        <label for="subject">練習科目</label>
+        <select id="subject">
+          <option>基本電學</option>
+          <option>計算機概論</option>
+        </select>
+        <button id="start" type="button">重新抽題</button>
+      </div>
+      <p id="status" role="status"></p>
+      <strong id="score" role="status"></strong>
+    </section>
+
+    <form id="quiz">
+      <div id="list"></div>
+      <button id="submit" type="submit" hidden>交卷並看解析</button>
+    </form>
+  </main>
+
+  <script src="papers.js"></script>
+  <script src="questions.js"></script>
+  <script src="mistakes.js"></script>
+  <script>
+    const $ = id => document.getElementById(id);
+    const subject = $("subject");
+    const letters = ["A", "B", "C", "D"];
+    let current = [];
+    let submitted = false;
+
+        const params = new URLSearchParams(location.search);
+    const paperId = params.get("paper");
+    const paperMode = params.has("paper");
+    const mistakeMode = !paperMode && params.get("mode") === "mistakes";
+
+    // 例如 cpc-107-instrument-electric-009：
+    // 前半段是試卷代號，最後的 009 是原題號。
+    function readQuestionId(id) {
+      return /^(.*)-(\d+)$/.exec(String(id));
+    }
+
+    const paperInfo = paperMode &&
+      typeof papers !== "undefined" && Array.isArray(papers)
+        ? papers.find(p => p.quizId === paperId)
+        : null;
+
+    if (mistakeMode) {
+        document.querySelector("h1").textContent = "錯題複習";
+        document.title = "錯題複習｜中華電信備考筆記";
+        document.querySelector('label[for="subject"]').hidden = true;
+        subject.hidden = true;
+        $("start").textContent = "重新練習待複習題目";
+    } 
+     else if (paperMode) {
+      const title = paperInfo
+        ? `${paperInfo.year} 年｜${paperInfo.title}`
+        : "歷屆試題作答";
+
+      document.querySelector("h1").textContent = title;
+      document.title = `${title}｜中華電信備考筆記`;
+
+      // 整卷模式不需要切換科目，保留「重新作答」即可。
+      document.querySelector('label[for="subject"]').hidden = true;
+      subject.hidden = true;
+      $("start").textContent = "重新作答";
+
+      const back = document.querySelector("header a");
+      back.href = "archive.html";
+      back.textContent = "← 返回歷屆試題";
+    } else {
+      const requested = params.get("subject");
+      if (["基本電學", "計算機概論"].includes(requested)) {
+        subject.value = requested;
+      }
+    }
+
+    function drawQuiz() {
+      $("list").replaceChildren();
+      $("score").textContent = "";
+      $("submit").hidden = true;
+      current = [];
+      submitted = false;
+
+      if (typeof questions === "undefined" || !Array.isArray(questions)) {
+        $("status").textContent =
+          "讀不到題庫。請檢查 questions.js 是否與本頁放在同一層，以及檔案內容是否完整。";
+        return;
+      }
+
+            // 重新開始時，也移除前一次交卷的篩選按鈕。
+      document.getElementById("result-filter")?.remove();
+
+      let savedIds = new Set();
+      if (mistakeMode) {
+        try {
+          savedIds = MistakeBook.read();
+        } catch {
+          $("status").textContent =
+            "無法讀取錯題本。請確認 mistakes.js 已載入，且瀏覽器允許儲存網站資料。";
+          return;
+        }
+      }
+
+      const seen = new Set();
+      const pool = questions.filter(q => {
+        if (!q.id) return false;
+        const id = String(q.id);
+        if (seen.has(id)) return false;
+
+        if (mistakeMode) {
+          if (!savedIds.has(id)) return false;
+        } else if (paperMode) {
+          const match = readQuestionId(id);
+          if (!match || match[1] !== paperId) return false;
+        } else if (q.subject !== subject.value) {
+          return false;
+        }
+
+        seen.add(id);
+        return true;
+      });
+
+      if (!pool.length) {
+        if (mistakeMode) {
+          $("status").textContent = savedIds.size
+            ? "錯題本有紀錄，但目前題庫找不到對應題目。請檢查題目 ID 是否改過。"
+            : "目前沒有待複習的錯題，可以回首頁繼續練習。";
+        } else if (paperMode) {
+          $("status").textContent =
+            "找不到這份試卷，請確認 papers.js 的 quizId 與題庫代號相同。";
+        } else {
+          $("status").textContent = `${subject.value}尚未收錄題目。`;
+        }
+        return;
+      }
+
+      if (mistakeMode) {
+        current = pool;
+        $("status").textContent =
+          `本次複習 ${current.length} 題。答對後可自行標記為已掌握。`;
+      } else if (paperMode) {
+        current = pool.sort((a, b) =>
+          Number(readQuestionId(a.id)[2]) - Number(readQuestionId(b.id)[2])
+        );
+        $("status").textContent =
+          `本卷已收錄 ${current.length} 題，依原題號排列。`;
+      } else {
+        for (let i = pool.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        current = pool.slice(0, 50);
+        $("status").textContent =
+          `${subject.value}題庫共 ${pool.length} 題，本次隨機練習 ${current.length} 題。`;
+      }
+
+
+      current.forEach((q, i) => {
+        const box = document.createElement("fieldset");
+        const legend = document.createElement("legend");
+        const displayNo = paperMode ? Number(readQuestionId(q.id)[2]) : i + 1;legend.textContent = `第 ${displayNo} 題`;
+        const stem = document.createElement("p");
+        stem.className = "stem";
+        stem.textContent = q.question;
+        box.append(legend, stem);
+        if (q.image) {
+        const img = document.createElement("img");
+        img.onerror = () => img.remove();  // 還沒放這張圖，就不顯示圖片
+        img.src = q.image;
+        img.alt = q.imageAlt || "本題電路圖";
+        img.style.display = "block";
+        img.style.maxWidth = "100%";
+        img.style.height = "auto";
+        img.style.margin = "12px 0";
+        box.append(img);
+        }
+
+
+        q.options.forEach((text, n) => {
+          const label = document.createElement("label");
+          label.className = "choice";
+          const input = document.createElement("input");
+          input.type = "radio";
+          input.name = `q${i}`;
+          input.value = letters[n];
+          label.append(input, ` ${letters[n]}. ${text}`);
+          box.append(label);
+        });
+
+        const feedback = document.createElement("div");
+        feedback.className = "feedback";
+        feedback.hidden = true;
+        box.append(feedback);
+        $("list").append(box);
+      });
+
+      $("submit").hidden = false;
+    }
+
+    function hasUnsubmittedAnswers() {
+      return !submitted && $("quiz").querySelector("input:checked") !== null;
+    }
+
+    let activeSubject = subject.value;
+
+    subject.addEventListener("change", () => {
+      if (hasUnsubmittedAnswers() && !confirm("切換科目會清除本次作答，確定切換？")) {
+        subject.value = activeSubject;
+        return;
+      }
+      activeSubject = subject.value;
+      drawQuiz();
+    });
+
+    $("start").addEventListener("click", () => {
+      if (hasUnsubmittedAnswers() && !confirm("這會清除本次作答，確定重新開始？")) return;
+      drawQuiz();
+    });
+
+    $("quiz").addEventListener("submit", event => {
+      event.preventDefault();
+      if (submitted || !current.length) return;
+
+      const boxes = [...$("list").querySelectorAll("fieldset")];
+      const picks = boxes.map(box => box.querySelector("input:checked")?.value);
+      const missing = picks.filter(value => !value).length;
+      if (missing && !confirm(`還有 ${missing} 題未作答，將以答錯計算。確定交卷？`)) return;
+
+            let correct = 0;
+      const wrongIds = [];
+      const needsReview = [];
+
+      current.forEach((q, i) => {
+        const pick = picks[i];
+        const accepted = String(q.answer).split("/").map(a => a.trim());
+        const ok = Boolean(pick) && accepted.includes(pick);
+
+        if (ok) correct++;
+        if (!ok) needsReview.push(i);
+        if (pick && !ok) wrongIds.push(q.id); // 沒作答不加入錯題本
+
+        const feedback = boxes[i].querySelector(".feedback");
+        feedback.classList.add(ok ? "right" : "wrong");
+
+        const result = ok ? "答對" : pick ? "答錯" : "未作答";
+        feedback.textContent =
+          `${result}｜你的答案：${pick || "未作答"}｜正解：${q.answer}` +
+          (q.source ? `｜來源：${q.source}` : "") +
+          (q.explanation ? `｜解析：${q.explanation}` : "");
+
+        // 只有在錯題模式重新答對，才提供移除按鈕。
+        if (mistakeMode && ok) {
+          const line = document.createElement("p");
+          const master = document.createElement("button");
+          master.type = "button";
+          master.textContent = "標記為已掌握";
+
+          master.addEventListener("click", () => {
+            try {
+              MistakeBook.remove(q.id);
+              master.textContent = "已掌握，已移出錯題本";
+              master.disabled = true;
+            } catch {
+              $("status").textContent = "未能更新錯題本，請檢查瀏覽器儲存設定。";
+            }
+          });
+
+          line.append(master);
+          feedback.append(line);
+        }
+
+        feedback.hidden = false;
+        boxes[i].querySelectorAll("input").forEach(input => input.disabled = true);
+      });
+
+      submitted = true;
+      $("submit").hidden = true;
+      $("score").textContent =
+        `答對 ${correct} / ${current.length} 題，` +
+        `得分 ${Math.round(correct / current.length * 100)} 分。`;
+
+      const note = `答錯 ${wrongIds.length} 題，未作答 ${missing} 題。`;
+      if (wrongIds.length) {
+        try {
+          MistakeBook.addMany(wrongIds);
+          $("status").textContent = `${note}答錯的題目已存入錯題本。`;
+        } catch {
+          $("status").textContent = `${note}本次已計分，但錯題未能儲存。`;
+        }
+      } else {
+        $("status").textContent = note;
+      }
+
+      // 不用在 50 題中逐題尋找；再按一次即可恢復顯示。
+      if (needsReview.length && needsReview.length < current.length) {
+        const reviewSet = new Set(needsReview);
+        const filter = document.createElement("button");
+        filter.type = "button";
+        filter.id = "result-filter";
+        filter.textContent = "只看錯題與未答題";
+        filter.setAttribute("aria-pressed", "false");
+        $("score").after(document.createTextNode(" "), filter);
+
+        filter.addEventListener("click", () => {
+          const onlyReview = filter.getAttribute("aria-pressed") === "false";
+          boxes.forEach((box, i) => {
+            box.hidden = onlyReview && !reviewSet.has(i);
+          });
+          filter.setAttribute("aria-pressed", String(onlyReview));
+          filter.textContent = onlyReview ? "顯示全部題目" : "只看錯題與未答題";
+        });
+      }
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    drawQuiz();
+  </script>
+</body>
+</html>

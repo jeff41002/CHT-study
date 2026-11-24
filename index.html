@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>中華電信備考筆記｜首頁</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #f4f7fa;
+      color: #172e40;
+      font: 1rem/1.65 "Microsoft JhengHei", "PingFang TC", sans-serif;
+    }
+    .wrap { width: min(920px, 92%); margin-inline: auto; }
+    header { background: #12304a; color: white; }
+    .topbar, nav, .actions {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px;
+    }
+    .topbar { justify-content: space-between; padding-block: 14px; }
+    header a { color: white; text-decoration: none; }
+    .brand { font-size: 1.15rem; font-weight: 700; }
+    nav a { padding: 5px 2px; }
+    nav a:hover, nav a[aria-current="page"] {
+      text-decoration: underline; text-underline-offset: 5px;
+    }
+    main { padding-block: 32px 44px; }
+    h1 { margin: 0; font-size: clamp(1.7rem, 4vw, 2.35rem); }
+    h2 { margin: 0; font-size: 1.25rem; }
+    p { margin: 6px 0 0; color: #526779; }
+    .card {
+      padding: 22px; border: 1px solid #d5e1e9;
+      border-radius: 12px; background: white;
+    }
+    .practice { margin-top: 22px; border-top: 4px solid #075985; }
+    .actions { margin-top: 16px; }
+    .button {
+      display: inline-block; padding: 10px 18px; border-radius: 7px;
+      background: #075985; color: white; text-decoration: none; font-weight: 700;
+    }
+    .button:hover { background: #12304a; }
+    .grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 16px; margin-top: 16px;
+    }
+    .more {
+      display: inline-block; margin-top: 12px; padding-block: 4px;
+      color: #075985; font-weight: 700; text-underline-offset: 3px;
+    }
+    footer { padding: 16px; color: #526779; text-align: center; }
+    :focus-visible { outline: 3px solid #d88a0a; outline-offset: 3px; }
+    @media (max-width: 600px) {
+      .grid { grid-template-columns: 1fr; }
+      .card { padding: 18px; }
+      main { padding-top: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap topbar">
+      <a class="brand" href="index.html">中華電信備考筆記</a>
+      <nav aria-label="主選單">
+        <a href="index.html" aria-current="page">首頁</a>
+        <a href="resources.html">學習資源</a>
+        <a href="archive.html">歷屆試題</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h1>今天想怎麼練習？</h1>
+    <p>選一科刷題、做一份歷屆試卷，或先把不熟的觀念弄懂。</p>
+
+    <section class="card practice">
+      <h2>依科目隨機練習</h2>
+      <p>從選定科目最多抽出 50 題，交卷後查看分數與各題結果。</p>
+      <div class="actions">
+        <a class="button" href="quiz.html?subject=基本電學">練基本電學</a>
+        <a class="button" href="quiz.html?subject=計算機概論">練計算機概論</a>
+        <a id="review-mistakes" href="quiz.html?mode=mistakes" hidden></a>
+      </div>
+    </section>
+
+    <div class="grid">
+      <section class="card">
+        <h2>做一份歷屆試卷</h2>
+        <p>挑選年度與考卷，依原題號作答，也可以查看原卷 PDF。</p>
+        <a class="more" href="archive.html">選擇歷屆試卷 →</a>
+      </section>
+
+      <section class="card">
+        <h2>複習不熟的觀念</h2>
+        <p>用主題卡複習電學、記憶體與網路，再回到對應考題。</p>
+        <a class="more" href="resources.html">查看學習資源 →</a>
+      </section>
+    </div>
+  </main>
+
+  <footer>個人學習用途｜非中華電信官方網站</footer>
+  <script src="mistakes.js"></script>
+<script>
+  function updateMistakeLink() {
+    const link = document.getElementById("review-mistakes");
+
+    try {
+      const count = MistakeBook.read().size;
+      link.hidden = count === 0;
+      link.textContent = `複習錯題（${count}）→`;
+    } catch {
+      link.hidden = true;
+    }
+  }
+
+  updateMistakeLink();
+  // 用瀏覽器「上一頁」回首頁，或在另一分頁作答後，也更新數量。
+  window.addEventListener("pageshow", updateMistakeLink);
+  window.addEventListener("storage", updateMistakeLink);
+</script>
+</body>
+</html>
